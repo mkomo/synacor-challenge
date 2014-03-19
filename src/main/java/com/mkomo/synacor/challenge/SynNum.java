@@ -13,11 +13,15 @@ public class SynNum {
 	}
 
 	public boolean isRegister() {
-		return val >= 2 << 15 && val < (2 << 15) + 7;
+		return val >= 1 << 15 && val < (1 << 15) + 7;
 	}
 
 	public int getRegisterIndex() {
-		return val - (2 << 15);
+		return val - (1 << 15);
+	}
+
+	public static void main(String[] args) {
+		System.out.println(1 << 15);
 	}
 
 }
