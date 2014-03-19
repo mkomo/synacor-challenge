@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Stack;
 
 public class PreloadedStream implements Stream {
 
@@ -14,6 +15,7 @@ public class PreloadedStream implements Stream {
 	private FileInputStream in;
 	private int offset = 0;
 	private int[] register = new int[8];
+	private Stack<Integer> stack = new Stack<Integer>();
 
 	public PreloadedStream(File file) {
 		this.binary = file;
@@ -32,6 +34,10 @@ public class PreloadedStream implements Stream {
 
 	public SynNum read() {
 		return offset < chars.size() ? chars.get(offset++) : null;
+	}
+
+	private SynNum read(int address) {
+		return address < chars.size() ? chars.get(address) : null;
 	}
 
 	public SynNum lazyRead() {
@@ -83,11 +89,42 @@ public class PreloadedStream implements Stream {
 	public int readOrReg() {
 		SynNum num = read();
 		if (num.isRegister()){
-			SynVM.debug("getting register: " + num.getRegisterIndex());
+			SynVM.trace(String.format("getting register %d (val: %d)", num.getRegisterIndex(), getRegister(num.getRegisterIndex())));
 			return getRegister(num.getRegisterIndex());
 		} else {
 			return num.getVal();
 		}
+	}
+
+	public int readOrReg(int address) {
+		SynNum num = read(address);
+		if (num.isRegister()){
+			SynVM.trace(String.format("getting register %d (val: %d)", num.getRegisterIndex(), getRegister(num.getRegisterIndex())));
+			return getRegister(num.getRegisterIndex());
+		} else {
+			return num.getVal();
+		}
+	}
+
+	public void set(int registerIndex, int val) {
+		if (registerIndex >= 0 && registerIndex < 8){
+			SynVM.trace("setting register " + registerIndex + " to " + val);
+			register[registerIndex] = val;
+		} else {
+			throw new IllegalArgumentException("registers are numbered 0 through 7: " + registerIndex);
+		}
+	}
+
+	public void push(int val) {
+		stack.push(val);
+	}
+
+	public int pop() {
+		return stack.pop();
+	}
+
+	public void write(int address, int val) {
+		chars.set(address, new SynNum(val));
 	}
 
 }
