@@ -46,8 +46,8 @@ public class PreloadedStream implements Stream {
 				int val = (upper << 8) + lower;
 
 				if (buffer[1] != 0){
-					SynVM.debug(String.format("buffer 1 is non-zero at index %d\n", chars.size()));
-					SynVM.debug(String.format("%05d + %05d = %05d (%s)\n", buffer[1], buffer[0], val, (char) val));
+					SynVM.trace(String.format("buffer 1 is non-zero at index %d\n", chars.size()));
+					SynVM.trace(String.format("%05d + %05d = %05d (%s)\n", buffer[1], buffer[0], val, (char) val));
 				}
 
 				return new SynNum(val);
@@ -83,6 +83,7 @@ public class PreloadedStream implements Stream {
 	public int readOrReg() {
 		SynNum num = read();
 		if (num.isRegister()){
+			SynVM.debug("getting register: " + num.getRegisterIndex());
 			return getRegister(num.getRegisterIndex());
 		} else {
 			return num.getVal();

@@ -9,14 +9,26 @@ import java.util.Map;
  *
  */
 public class SynVM {
+
+	private static Map<Integer, Instruction> instructions = populateInstructions();
+
 	public static void main(String[] args) throws Exception {
-		Stream s = new PreloadedStream(new File("src/main/resources/challenge.bin"));
-		Map<Integer, Instruction> instructions = new HashMap<Integer, Instruction>();
-		populateInstructions(instructions);
+
+		SynVM vm = new SynVM();
+		vm.execute(new File("src/main/resources/challenge.bin"));
+
+	}
+
+
+
+	public void execute(File file) {
+		Stream s = new PreloadedStream(file);
+
 		SynNum next;
 		int count = 0;
 		while ((next = s.read()) != null){
 			if (count >= 1000){
+				System.err.println("exiting early");
 				System.exit(0);
 			} else {
 				count ++;
@@ -30,10 +42,13 @@ public class SynVM {
 				trace("done ");
 			}
 		}
+
 	}
 
-	private static void populateInstructions(
-			Map<Integer, Instruction> instructions) {
+
+
+	private static Map<Integer, Instruction> populateInstructions() {
+		Map<Integer, Instruction> instructions = new HashMap<Integer, Instruction>();
 		instructions.put(0, new Instruction(){
 
 			@Override
@@ -79,7 +94,7 @@ public class SynVM {
 				int cond = s.readOrReg();
 				int offset = s.readOrReg();
 				if (cond == 0) {
-					debug(cond + " is nonzero; jumping to: " + offset);
+					debug(cond + " is zero; jumping to: " + offset);
 					s.jmp(offset);
 				}
 			}
@@ -103,20 +118,35 @@ public class SynVM {
 			}
 
 		});
+
+		return instructions;
+		/**
+		 *
+nonzero reg
+no set op
+no gt op
+no stack
+no bitwise and
+no bitwise not
+no rmem op
+no wmem op
+no call op
+no modulo math during add or mult
+not hitchhiking
+no mult op
+no mod op
+		 */
 	}
 
-	static class theLock extends Object {
-	}
-	static public theLock lockObject = new theLock();
 	private static void output(char read) {
 		synchronized (System.out) {
 			System.out.print(read);
 		}
 	}
 	static void debug(String string) {
-//		synchronized (System.out) {
-//			System.out.println("****(" + string + ")*****");
-//		}
+		synchronized (System.out) {
+			System.out.println("****(" + string + ")*****");
+		}
 	}
 	static void trace(String string) {
 //		synchronized (System.out) {
