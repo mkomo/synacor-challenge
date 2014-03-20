@@ -3,46 +3,77 @@ package com.mkomo.synacor.challenge;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Stack;
 
 public class PreloadedStream implements Stream {
 
-	private File binary;
-	private byte[] buffer = new byte[2];
 	private List<SynNum> chars = new ArrayList<SynNum>();
-	private FileInputStream in;
 	private int offset = 0;
 	private int[] register = new int[8];
 	private Stack<Integer> stack = new Stack<Integer>();
 
 	public PreloadedStream(File file) {
-		this.binary = file;
-		load();
+		load(file);
 	}
 
-	private void load() {
-		System.err.println("loading");
-		SynNum c;
-		while ((c = lazyRead()) != null){
-			chars.add(c);
+	private PreloadedStream() {
+	}
+
+	@Override
+	public int hashCode(){
+		return Arrays.hashCode(register) + stack.hashCode() + offset + chars.hashCode();
+	}
+
+	@SuppressWarnings("unchecked")
+	public Stream getCopy(){
+		PreloadedStream ps = new PreloadedStream();
+		ps.chars = new ArrayList<SynNum>(chars);
+		ps.offset = offset;
+		ps.register = Arrays.copyOf(register, register.length);
+		ps.stack = (Stack<Integer>) stack.clone();
+		return ps;
+	}
+
+	private void load(File binary) {
+		FileInputStream in = null;
+		try {
+//			System.err.println("loading");
+			in = new FileInputStream(binary);
+			SynNum c;
+			while ((c = lazyRead(in)) != null){
+				chars.add(c);
+			}
+			offset = 0;
+//			System.err.println("done");
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} finally {
+			try {
+				in.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
-		offset = 0;
-		System.err.println("done");
 	}
 
 	public SynNum read() {
 		return offset < chars.size() ? chars.get(offset++) : null;
 	}
 
-	private SynNum read(int address) {
+	public SynNum read(int address) {
 		return address < chars.size() ? chars.get(address) : null;
 	}
 
-	public SynNum lazyRead() {
+	public SynNum lazyRead(FileInputStream in) {
+		byte[] buffer = new byte[2];
 		try {
-			int out = getInputStream().read(buffer);
+			int out = in.read(buffer);
 			if (out == -1) {
 				SynVM.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! end of input at " + chars.size());
 				return null;
@@ -63,12 +94,12 @@ public class PreloadedStream implements Stream {
 		}
 	}
 
-	private FileInputStream getInputStream() throws FileNotFoundException {
-		if (this.in == null){
-			this.in = new FileInputStream(binary);
-		}
-		return this.in;
-	}
+//	private FileInputStream getInputStream() throws FileNotFoundException {
+//		if (this.in == null){
+//			this.in = new FileInputStream(binary);
+//		}
+//		return this.in;
+//	}
 
 	public int offset() {
 		return offset;

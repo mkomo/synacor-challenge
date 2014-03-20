@@ -1,8 +1,10 @@
 package com.mkomo.synacor.challenge;
 
-public interface Stream {
+public interface Stream extends Cloneable {
 
 	SynNum read();
+
+	SynNum read(int offset);
 
 	int offset();
 
@@ -21,5 +23,7 @@ public interface Stream {
 	int pop();
 
 	void write(int address, int val);
+
+	Stream getCopy();
 
 }

@@ -20,4 +20,13 @@ public class SynNum {
 		return val - (1 << 15);
 	}
 
+	@Override
+	public int hashCode(){
+		return val;
+	}
+
+	@Override
+	public String toString(){
+		return isRegister() ? "REG_" + getRegisterIndex() : String.valueOf(val);
+	}
 }
