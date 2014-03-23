@@ -1,17 +1,12 @@
 package com.mkomo.synacor.challenge;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Lists;
+import com.mkomo.synacor.challenge.reader.Reader;
+import com.mkomo.synacor.challenge.reader.ScriptReader;
 
 public class SynVM {
 
@@ -20,12 +15,17 @@ public class SynVM {
 	private static boolean TRACE = false;
 	private static StringBuilder currentOutput = new StringBuilder();
 
-	private static File interactionFile = new File("src/main/resources/actions");
-	private static FileInputStream is;
-	private static Iterator<Character> inputQueue;
+	static Stream checkpoint;
+//	private static Reader reader = new InputReader();
+//	private static Reader reader = new PermutationReader();
+	private static Reader reader = new ScriptReader("src/main/resources/actions");
+
+	protected static int getNextInput(Stream s) {
+		int val = getInput().read();
+		return val;
+	}
 
 	public static void main(String[] args) throws Exception {
-		is = new FileInputStream(interactionFile);
 
 		Stream stream = new PreloadedStream(new File("src/main/resources/challenge.bin"));
 		while (true){
@@ -33,16 +33,9 @@ public class SynVM {
 				SynVM vm = new SynVM();
 				vm.execute(stream);
 			} catch (Exception e) {
-				if (!e.getMessage().equals("bad guess (billions)")){
-					System.out.println("restarted for another reason");
-					e.printStackTrace();
-					System.exit(0);
-				}
+				e.printStackTrace();
 				if (checkpoint != null){
 					stream = checkpoint.getCopy();
-					guess++;
-					inputQueue = Lists.charactersOf("inv\nuse teleporter\n").iterator();
-					System.out.println("*******************guess is now " + guess);
 				}
 			}
 		}
@@ -320,13 +313,6 @@ public class SynVM {
 				char c = (char)s.readOrReg();
 				output(c);
 				currentOutput.append(c);
-				if (currentOutput.toString().trim().endsWith("eaten by a grue.")) {
-					throw new RuntimeException("GRUE TIME");
-				}
-				if (currentOutput.toString().trim().contains("Estimated time to completion: 1 billion years.\"")) {
-					System.out.println("Estimated time to completion");
-//					loud = true;
-				}
 				trace("'");
 			}
 
@@ -337,21 +323,8 @@ public class SynVM {
 			public void execute(Stream s) {
 				int reg = s.read().getRegisterIndex();
 				debug("reading char and saving it to: " + reg);
-				try {
-					int input = getNextInput(s);
-					if (input == -1){
-						input = getNextCoinPermutationCharacter();
-					}
-
-					if (input == -1){
-						input = System.in.read();
-					}
-					System.out.print((char)input);
-					s.set(reg, input);
-					currentOutput = new StringBuilder();
-				} catch (IOException e) {
-					throw new RuntimeException(e);
-				}
+				int input = getNextInput(s);
+				s.set(reg, input);
 			}
 
 		});
@@ -367,56 +340,9 @@ public class SynVM {
 		return instructions;
 	}
 
-	static List<String> coinTypes = Arrays.asList("blue", "red", "shiny", "concave", "corroded");
-	static Iterator<List<String>> coinPermutations = Collections2.permutations(coinTypes).iterator();
-	static String currentCoinPermutationString = null;
-	static int currentCoinPermuationCharIndex = 0;
-
-	protected static int getNextCoinPermutationCharacter() {
-		if (currentCoinPermutationString == null || currentCoinPermuationCharIndex >= currentCoinPermutationString.length()){
-			if (!currentOutput.toString().contains("As you place the last coin, they are all released onto the floor.")){
-				return -1;
-			}
-			currentOutput = new StringBuilder();
-			currentCoinPermutationString = getString(coinPermutations.next());
-			currentCoinPermuationCharIndex = 0;
-		}
-		if (currentCoinPermutationString == null){
-			return -1;
-		}
-		int val = currentCoinPermutationString.charAt(currentCoinPermuationCharIndex);
-		currentCoinPermuationCharIndex++;
-		return val;
+	private static Reader getInput() {
+		return reader;
 	}
-
-	private static String getString(List<String> next) {
-		StringBuilder sb = new StringBuilder();
-		for (String type : next){
-			sb.append("take " + type + " coin\n");
-			sb.append("use " + type + " coin\n");
-		}
-		return sb.toString();
-	}
-	static Stream checkpoint;
-
-	protected static int getNextInput(Stream s) throws IOException {
-		int val = is.read();
-		if (val == '~'){
-			System.out.println("checkpoint");
-//			loud = true;
-			checkpoint = s.getCopy();
-			s.set(7, guess);
-		}
-		return val;
-	}
-
-	protected static int getTeleporter(Stream s) throws IOException {
-		s.set(7, guess);
-		Character val = inputQueue.next();
-		return val;
-	}
-
-
 
 	private static void output(char read) {
 		synchronized (System.out) {
