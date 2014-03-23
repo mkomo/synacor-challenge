@@ -6,7 +6,7 @@ public class InputReader implements Reader {
 
 	public int read() {
 		try {
-			System.out.println("read");
+			System.out.print("$ ");
 			return System.in.read();
 		} catch (IOException e) {
 			throw new RuntimeException("failed to read console reader", e);

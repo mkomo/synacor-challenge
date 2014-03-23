@@ -1,16 +1,18 @@
 package com.mkomo.synacor.challenge;
 
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.mkomo.synacor.challenge.reader.InputReader;
 import com.mkomo.synacor.challenge.reader.Reader;
 import com.mkomo.synacor.challenge.reader.ScriptReader;
 
 public class SynVM {
 
-	private static int guess = 1;
 	private static boolean DEBUG = false;
 	private static boolean TRACE = false;
 	private static StringBuilder currentOutput = new StringBuilder();
@@ -22,12 +24,64 @@ public class SynVM {
 
 	protected static int getNextInput(Stream s) {
 		int val = getInput().read();
+		if (val == -1 && !(getInput() instanceof InputReader)){
+			reader = new InputReader();
+		} else {
+			if (val == '~'){
+				debugger(s);
+			}
+		}
 		return val;
 	}
 
-	public static void main(String[] args) throws Exception {
+	private static void debugger(Stream s) {
+		try {
+			char c;
+			while ((c = (char) System.in.read()) != -1){
+				if (c == 's') {
+					for (int i = 0; ; i++){
+						SynNum val = s.read(i);
+						String out = String.format("%05d ", i);
+						if (instructions.containsKey(val.getVal())){
+							out += instructions.get(val.getVal()).describe(s, i);
+						} else if (val.getVal() < 128 && isPrintableChar((char) val.getVal())){
+							out += (char) val.getVal();
+						} else {
+							out += val.getVal();
+						}
+						System.out.println(out);
+					}
+				} else if (c == 'r'){
+					for (int i = 0; i < 8; i++){
+						System.out.println(i + ": " + s.getRegister(i));
+					}
+				} else if (c == '1'){
+					System.out.println("setting address to x");
+					s.jmp(11726);
+					return;
+				} else if (c == 0){
+					return;
+				}
+			}
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 
+	public static boolean isPrintableChar(char c) {
+		Character.UnicodeBlock block = Character.UnicodeBlock.of(c);
+		return (!Character.isISOControl(c)) && c != KeyEvent.CHAR_UNDEFINED
+				&& block != null && block != Character.UnicodeBlock.SPECIALS;
+	}
+
+	private static Reader getInput() {
+		return reader;
+	}
+
+	public static void main(String[] args) throws Exception {
 		Stream stream = new PreloadedStream(new File("src/main/resources/challenge.bin"));
+//		System.exit(0);
 		while (true){
 			try {
 				SynVM vm = new SynVM();
@@ -41,7 +95,7 @@ public class SynVM {
 		}
 	}
 	private static boolean loud;
-	private Map<Integer, Instruction> instructions = populateInstructions();
+	private static Map<Integer, Instruction> instructions = populateInstructions();
 
 	public void execute(Stream stream) throws FileNotFoundException {
 		SynNum next;
@@ -62,7 +116,7 @@ public class SynVM {
 
 	}
 
-	private static Map<Integer, Instruction> populateInstructions() {
+	public static Map<Integer, Instruction> populateInstructions() {
 		Map<Integer, Instruction> instructions = new HashMap<Integer, Instruction>();
 		instructions.put(0, new Instruction(0, "halt", 0){
 
@@ -338,10 +392,6 @@ public class SynVM {
 		});
 
 		return instructions;
-	}
-
-	private static Reader getInput() {
-		return reader;
 	}
 
 	private static void output(char read) {
