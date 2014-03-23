@@ -12,7 +12,7 @@ import java.util.Stack;
 public class PreloadedStream implements Stream {
 
 	private List<SynNum> chars = new ArrayList<SynNum>();
-	private int offset = 0;
+	private int address = 0;
 	private int[] register = new int[8];
 	private Stack<Integer> stack = new Stack<Integer>();
 
@@ -25,14 +25,14 @@ public class PreloadedStream implements Stream {
 
 	@Override
 	public int hashCode(){
-		return Arrays.hashCode(register) + stack.hashCode() + offset + chars.hashCode();
+		return Arrays.hashCode(register) + stack.hashCode() + address + chars.hashCode();
 	}
 
 	@SuppressWarnings("unchecked")
 	public Stream getCopy(){
 		PreloadedStream ps = new PreloadedStream();
 		ps.chars = new ArrayList<SynNum>(chars);
-		ps.offset = offset;
+		ps.address = address;
 		ps.register = Arrays.copyOf(register, register.length);
 		ps.stack = (Stack<Integer>) stack.clone();
 		return ps;
@@ -41,33 +41,21 @@ public class PreloadedStream implements Stream {
 	private void load(File binary) {
 		FileInputStream in = null;
 		try {
-//			System.err.println("loading");
 			in = new FileInputStream(binary);
 			SynNum c;
 			while ((c = lazyRead(in)) != null){
 				chars.add(c);
 			}
-			offset = 0;
-//			System.err.println("done");
+			address = 0;
 		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} finally {
 			try {
 				in.close();
 			} catch (IOException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
-	}
-
-	public SynNum read() {
-		return offset < chars.size() ? chars.get(offset++) : null;
-	}
-
-	public SynNum read(int address) {
-		return address < chars.size() ? chars.get(address) : null;
 	}
 
 	public SynNum lazyRead(FileInputStream in) {
@@ -75,7 +63,6 @@ public class PreloadedStream implements Stream {
 		try {
 			int out = in.read(buffer);
 			if (out == -1) {
-				SynVM.debug("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! end of input at " + chars.size());
 				return null;
 			} else {
 				int lower = buffer[0] < 0 ? 256 + buffer[0] : buffer[0];
@@ -94,19 +81,22 @@ public class PreloadedStream implements Stream {
 		}
 	}
 
-//	private FileInputStream getInputStream() throws FileNotFoundException {
-//		if (this.in == null){
-//			this.in = new FileInputStream(binary);
-//		}
-//		return this.in;
-//	}
-
-	public int offset() {
-		return offset;
+	public SynNum read() {
+		SynNum val = read(address);
+		address++;
+		return val;
 	}
 
-	public void jmp(int offset) {
-		this.offset = offset;
+	public SynNum read(int address) {
+		return address < chars.size() ? chars.get(address) : null;
+	}
+
+	public int address() {
+		return address;
+	}
+
+	public void jmp(int address) {
+		this.address = address;
 	}
 
 	public int getRegister(int registerIndex) {

@@ -4,11 +4,11 @@ public interface Stream extends Cloneable {
 
 	SynNum read();
 
-	SynNum read(int offset);
+	SynNum read(int address);
 
-	int offset();
+	int address();
 
-	void jmp(int offset);
+	void jmp(int address);
 
 	int getRegister(int registerIndex);
 

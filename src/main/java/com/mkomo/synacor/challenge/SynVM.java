@@ -68,7 +68,7 @@ public class SynVM {
 
 			@Override
 			public void execute(Stream s) {
-				debug("exiting at offset " + s.offset());
+				debug("exiting at address " + s.address());
 //				System.exit(0);
 				try {
 					Thread.sleep(1000);
@@ -148,10 +148,10 @@ public class SynVM {
 
 			@Override
 			public void execute(Stream s) {
-				int offset = s.readOrReg();
+				int address = s.readOrReg();
 
-				debug("jumping to: " + offset);
-				s.jmp(offset);
+				debug("jumping to: " + address);
+				s.jmp(address);
 			}
 
 		});
@@ -160,12 +160,12 @@ public class SynVM {
 			@Override
 			public void execute(Stream s) {
 				int cond = s.readOrReg();
-				int offset = s.readOrReg();
+				int address = s.readOrReg();
 				if (cond != 0) {
-					debug(cond + " is nonzero; jumping to: " + offset);
-					s.jmp(offset);
+					debug(cond + " is nonzero; jumping to: " + address);
+					s.jmp(address);
 				} else {
-					debug(cond + " is zero; not jumping to: " + offset);
+					debug(cond + " is zero; not jumping to: " + address);
 				}
 			}
 
@@ -175,12 +175,12 @@ public class SynVM {
 			@Override
 			public void execute(Stream s) {
 				int cond = s.readOrReg();
-				int offset = s.readOrReg();
+				int address = s.readOrReg();
 				if (cond == 0) {
-					debug(cond + " is zero; jumping to: " + offset);
-					s.jmp(offset);
+					debug(cond + " is zero; jumping to: " + address);
+					s.jmp(address);
 				} else {
-					debug(cond + " is nonzero; not jumping to: " + offset);
+					debug(cond + " is nonzero; not jumping to: " + address);
 				}
 			}
 
@@ -287,10 +287,10 @@ public class SynVM {
 
 			@Override
 			public void execute(Stream s) {
-				int offset = s.readOrReg();
-				s.push(s.offset());
-				debug("call - jumping to: " + offset);
-				s.jmp(offset);
+				int address = s.readOrReg();
+				s.push(s.address());
+				debug("call - jumping to: " + address);
+				s.jmp(address);
 			}
 
 		});
@@ -298,10 +298,10 @@ public class SynVM {
 
 			@Override
 			public void execute(Stream s) {
-				int offset = s.pop();
+				int address = s.pop();
 
-				debug("ret - jumping to: " + offset);
-				s.jmp(offset);
+				debug("ret - jumping to: " + address);
+				s.jmp(address);
 			}
 
 		});

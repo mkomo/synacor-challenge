@@ -15,14 +15,13 @@ public abstract class Instruction {
 	public abstract void execute(Stream s);
 
 	public void executeLoud(Stream stream) {
-		StringBuilder sb = new StringBuilder("  " + stream.offset() + "\t" + specString + " ");
-		int offset = stream.offset();
+		StringBuilder sb = new StringBuilder("  " + stream.address() + "\t" + specString + " ");
+		int address = stream.address();
 		for (int i = 0; i < numArgs; i++){
-			SynNum val = stream.read(offset + i);
+			SynNum val = stream.read(address + i);
 			sb.append(String.format("%s ", val.toString()));
 		}
 		System.out.println(sb.toString());
-//		System.out.printf("%0" + ((stream.offset() * 100) / 30050) + "d\n", opcode);
 		execute(stream);
 	}
 }
